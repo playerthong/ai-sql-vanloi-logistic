@@ -40,7 +40,15 @@ WITH ScheduleAllowances AS (
         MAX(CASE WHEN rn = 5 THEN cla.name END) AS allowance_name_5,
         MAX(CASE WHEN rn = 5 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_5,
         MAX(CASE WHEN rn = 6 THEN cla.name END) AS allowance_name_6,
-        MAX(CASE WHEN rn = 6 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_6
+        MAX(CASE WHEN rn = 6 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_6,
+        MAX(CASE WHEN rn = 7 THEN cla.name END) AS allowance_name_7,
+        MAX(CASE WHEN rn = 7 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_7,
+        MAX(CASE WHEN rn = 8 THEN cla.name END) AS allowance_name_8,
+        MAX(CASE WHEN rn = 8 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_8,
+        MAX(CASE WHEN rn = 9 THEN cla.name END) AS allowance_name_9,
+        MAX(CASE WHEN rn = 9 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_9,
+        MAX(CASE WHEN rn = 10 THEN cla.name END) AS allowance_name_10,
+        MAX(CASE WHEN rn = 10 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_10
     FROM 
         public.erp_schedules_logistic_cost slc
     JOIN 
@@ -56,6 +64,38 @@ WITH ScheduleAllowances AS (
         JOIN 
             public.erp_schedules_logistic_allowance sla_inner ON slc_inner.external_id = sla_inner.schedules_logistic_cost_external_id
     ) ranked ON sla.id = ranked.id
+    GROUP BY 
+        slc.schedules_external_id
+),
+
+ScheduleSurcharges AS (
+    SELECT 
+        slc.schedules_external_id,
+        MAX(CASE WHEN rn = 1 THEN ts.name END) AS surcharge_name_1,
+        MAX(CASE WHEN rn = 1 THEN sls.surcharge END) AS surcharge_amount_1,
+        MAX(CASE WHEN rn = 2 THEN ts.name END) AS surcharge_name_2,
+        MAX(CASE WHEN rn = 2 THEN sls.surcharge END) AS surcharge_amount_2,
+        MAX(CASE WHEN rn = 3 THEN ts.name END) AS surcharge_name_3,
+        MAX(CASE WHEN rn = 3 THEN sls.surcharge END) AS surcharge_amount_3,
+        MAX(CASE WHEN rn = 4 THEN ts.name END) AS surcharge_name_4,
+        MAX(CASE WHEN rn = 4 THEN sls.surcharge END) AS surcharge_amount_4,
+        MAX(CASE WHEN rn = 5 THEN ts.name END) AS surcharge_name_5,
+        MAX(CASE WHEN rn = 5 THEN sls.surcharge END) AS surcharge_amount_5
+    FROM 
+        public.erp_schedules_logistic_cost slc
+    JOIN 
+        public.erp_schedules_logistic_surcharge sls ON slc.external_id = sls.schedules_logistic_cost_external_id
+    JOIN 
+        public.erp_template_surcharge ts ON sls.template_surcharge_id = ts.id
+    JOIN (
+        SELECT 
+            sls_inner.id,
+            ROW_NUMBER() OVER (PARTITION BY slc_inner.schedules_external_id ORDER BY sls_inner.id) as rn
+        FROM 
+            public.erp_schedules_logistic_cost slc_inner
+        JOIN 
+            public.erp_schedules_logistic_surcharge sls_inner ON slc_inner.external_id = sls_inner.schedules_logistic_cost_external_id
+    ) ranked ON sls.id = ranked.id
     GROUP BY 
         slc.schedules_external_id
 )
@@ -121,6 +161,14 @@ SELECT
     to_char(COALESCE(sa.allowance_amount_5, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_5",
     sa.allowance_name_6 AS "Tai_chinh_Ten_phu_cap_6",
     to_char(COALESCE(sa.allowance_amount_6, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_6",
+    sa.allowance_name_7 AS "Tai_chinh_Ten_phu_cap_7",
+    to_char(COALESCE(sa.allowance_amount_7, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_7",
+    sa.allowance_name_8 AS "Tai_chinh_Ten_phu_cap_8",
+    to_char(COALESCE(sa.allowance_amount_8, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_8",
+    sa.allowance_name_9 AS "Tai_chinh_Ten_phu_cap_9",
+    to_char(COALESCE(sa.allowance_amount_9, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_9",
+    sa.allowance_name_10 AS "Tai_chinh_Ten_phu_cap_10",
+    to_char(COALESCE(sa.allowance_amount_10, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_10",
     
     -- Total Allowance Main Driver
     to_char(COALESCE(cost.total_allowance_cost_first_driver, 0), 'FM999,999,999,990') AS "Tong_phu_cap_tai_chinh",
@@ -159,6 +207,14 @@ SELECT
     to_char(COALESCE(sa.allowance_amount_5, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_5",
     sa.allowance_name_6 AS "Tai_phu_Ten_phu_cap_6",
     to_char(COALESCE(sa.allowance_amount_6, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_6",
+    sa.allowance_name_7 AS "Tai_phu_Ten_phu_cap_7",
+    to_char(COALESCE(sa.allowance_amount_7, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_7",
+    sa.allowance_name_8 AS "Tai_phu_Ten_phu_cap_8",
+    to_char(COALESCE(sa.allowance_amount_8, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_8",
+    sa.allowance_name_9 AS "Tai_phu_Ten_phu_cap_9",
+    to_char(COALESCE(sa.allowance_amount_9, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_9",
+    sa.allowance_name_10 AS "Tai_phu_Ten_phu_cap_10",
+    to_char(COALESCE(sa.allowance_amount_10, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_10",
     
     -- Total Allowance Assistant Driver
     to_char(COALESCE(cost.total_allowance_cost_second_driver, 0), 'FM999,999,999,990') AS "Tong_phu_cap_tai_phu",
@@ -168,8 +224,20 @@ SELECT
         CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END +
         COALESCE(cost.total_allowance_cost_second_driver, 0)
     ), 'FM999,999,999,990') AS "Tong_thu_nhap_tai_phu",
-
-
+    
+    -- ==========================================================
+    -- PLAN SURCHARGES (From CTE)
+    -- ==========================================================
+    ss.surcharge_name_1 AS "Ten_phu_phi_1",
+    to_char(COALESCE(ss.surcharge_amount_1, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_1",
+    ss.surcharge_name_2 AS "Ten_phu_phi_2",
+    to_char(COALESCE(ss.surcharge_amount_2, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_2",
+    ss.surcharge_name_3 AS "Ten_phu_phi_3",
+    to_char(COALESCE(ss.surcharge_amount_3, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_3",
+    ss.surcharge_name_4 AS "Ten_phu_phi_4",
+    to_char(COALESCE(ss.surcharge_amount_4, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_4",
+    ss.surcharge_name_5 AS "Ten_phu_phi_5",
+    to_char(COALESCE(ss.surcharge_amount_5, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_5",
 
     -- ==========================================================
     -- TRIP STATUS & NOTES
@@ -225,6 +293,9 @@ LEFT JOIN public.erp_company log_comp ON s.logistic_company_external_id = log_co
 
 -- Join Allowances CTE
 LEFT JOIN ScheduleAllowances sa ON s.external_id = sa.schedules_external_id
+
+-- Join Surcharges CTE
+LEFT JOIN ScheduleSurcharges ss ON s.external_id = ss.schedules_external_id
 
 WHERE 
     s.is_cancel = false

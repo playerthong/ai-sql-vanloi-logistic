@@ -682,6 +682,60 @@ CREATE TABLE public.erp_schedules_logistic_cost (
 	CONSTRAINT uq_schedules_logistic_cost UNIQUE (schedules_external_id)
 );
 
+-- public.erp_template_surcharge definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_template_surcharge;
+
+CREATE TABLE public.erp_template_surcharge (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	"name" varchar(255) NULL,
+	description varchar(255) NULL,
+	unit varchar(255) DEFAULT 'VNĐ'::character varying NULL,
+	is_deleted bool DEFAULT false NOT NULL,
+	"type" int4 NULL,
+	is_3pl bool DEFAULT false NOT NULL,
+	CONSTRAINT erp_template_surcharge_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_template_surcharge_name UNIQUE (name)
+);
+
+
+-- public.erp_schedules_logistic_surcharge definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_schedules_logistic_surcharge;
+
+CREATE TABLE public.erp_schedules_logistic_surcharge (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid NOT NULL,
+	schedules_logistic_cost_external_id uuid NOT NULL,
+	template_surcharge_id int4 NOT NULL,
+	surcharge numeric(18, 4) DEFAULT 0 NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	CONSTRAINT erp_schedules_logistic_surcharge_pkey PRIMARY KEY (id)
+);
+
+-- public.erp_schedules_customer_surcharge definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_schedules_customer_surcharge;
+
+CREATE TABLE public.erp_schedules_customer_surcharge (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid NOT NULL,
+	schedules_customer_price_external_id uuid NOT NULL,
+	template_surcharge_id int4 NOT NULL,
+	surcharge numeric(18, 4) DEFAULT 0 NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	CONSTRAINT erp_schedules_customer_surcharge_pkey PRIMARY KEY (id)
+);
 
 -- public.erp_shedlock definition
 

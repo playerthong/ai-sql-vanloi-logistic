@@ -25,28 +25,39 @@
 -- TRẠNG THÁI CHUYẾN -> s.status
 -- MÃ KẾ HOẠCH -> s.code
 
-WITH AllowanceSummary AS (
+
+WITH ScheduleAllowances AS (
     SELECT 
         slc.schedules_external_id,
-        
-        -- Allowance 1 Quantity (template_allowance_id = 1)
-        SUM(CASE WHEN sla.template_allowance_id = 1 THEN sla.quantity ELSE 0 END) AS allowance_1_quantity,
-        
-        -- Allowance 2 Quantity (template_allowance_id = 2)
-        SUM(CASE WHEN sla.template_allowance_id = 2 THEN sla.quantity ELSE 0 END) AS allowance_2_quantity,
-        
-        -- Loading Allowance Cost (template_allowance_id IN (3, 4, 12, 13, 14))
-        SUM(CASE WHEN sla.template_allowance_id IN (3, 4, 12, 13, 14) THEN sla.allowance_cost * sla.quantity ELSE 0 END) AS loading_allowance_cost,
-
-        -- Standby Salary (Lương sơ cua - template_allowance_id IN (9, 10))
-        SUM(CASE WHEN sla.template_allowance_id IN (9, 10) THEN sla.allowance_cost * sla.quantity ELSE 0 END) AS standby_allowance_cost,
-
-        -- Other Allowances (Total - Allowance 1 - Allowance 2 - Loading Allowance - Standby Salary)
-        SUM(CASE WHEN sla.template_allowance_id NOT IN (1, 2, 3, 4, 9, 10, 12, 13, 14) OR sla.template_allowance_id IS NULL THEN sla.allowance_cost * sla.quantity ELSE 0 END) AS other_allowance_cost
-        
-    FROM public.erp_schedules_logistic_allowance sla
-    JOIN public.erp_schedules_logistic_cost slc ON sla.schedules_logistic_cost_external_id = slc.external_id
-    GROUP BY slc.schedules_external_id
+        MAX(CASE WHEN rn = 1 THEN cla.name END) AS allowance_name_1,
+        MAX(CASE WHEN rn = 1 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_1,
+        MAX(CASE WHEN rn = 2 THEN cla.name END) AS allowance_name_2,
+        MAX(CASE WHEN rn = 2 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_2,
+        MAX(CASE WHEN rn = 3 THEN cla.name END) AS allowance_name_3,
+        MAX(CASE WHEN rn = 3 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_3,
+        MAX(CASE WHEN rn = 4 THEN cla.name END) AS allowance_name_4,
+        MAX(CASE WHEN rn = 4 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_4,
+        MAX(CASE WHEN rn = 5 THEN cla.name END) AS allowance_name_5,
+        MAX(CASE WHEN rn = 5 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_5,
+        MAX(CASE WHEN rn = 6 THEN cla.name END) AS allowance_name_6,
+        MAX(CASE WHEN rn = 6 THEN (sla.allowance_cost * COALESCE(sla.quantity, 1)) END) AS allowance_amount_6
+    FROM 
+        public.erp_schedules_logistic_cost slc
+    JOIN 
+        public.erp_schedules_logistic_allowance sla ON slc.external_id = sla.schedules_logistic_cost_external_id
+    JOIN 
+        public.erp_company_logistic_allowance cla ON sla.company_logistic_allowance_external_id = cla.external_id
+    JOIN (
+        SELECT 
+            sla_inner.id,
+            ROW_NUMBER() OVER (PARTITION BY slc_inner.schedules_external_id ORDER BY sla_inner.id) as rn
+        FROM 
+            public.erp_schedules_logistic_cost slc_inner
+        JOIN 
+            public.erp_schedules_logistic_allowance sla_inner ON slc_inner.external_id = sla_inner.schedules_logistic_cost_external_id
+    ) ranked ON sla.id = ranked.id
+    GROUP BY 
+        slc.schedules_external_id
 )
 
 SELECT
@@ -71,27 +82,98 @@ SELECT
     s.end_time + INTERVAL '7 hours' AS "Thoi_gian_ket_thuc",
     COALESCE(log_comp.name, 'Van Loi Logistics') AS "Don_vi_van_chuyen",
     CASE 
-        WHEN v.truck_type = 'INTERNAL' THEN 'Noi bo' 
+        WHEN log_comp.company_type = 'OWN' THEN 'Nội bộ' 
         ELSE '3PL' 
-    END AS "noi_bo_3pl",
+    END AS "Noi_bo_3pl",    
+    CASE 
+        WHEN v.truck_type = 'INTERNAL' THEN 'Xe Nội bộ' 
+        ELSE 'Xe 3PL' 
+    END AS "Xe_noi_bo_3pl",
     s.license_plate AS "Bien_kiem_soat",
     -- Vehicle Load / Group
     mg.name AS "Tai_trong_xe",    
-    -- Main Driver Info
+    
+    -- ==========================================================
+    -- MAIN DRIVER INFO & SALARY
+    -- ==========================================================
     d1.name AS "Tai_chinh",
     d1.external_code AS "Msnv_tai_chinh",
     d1.phone AS "Sdt_tai_chinh",
-    to_char(COALESCE(cost.route_cost, 0), 'FM999,999,999,990') AS "Luong_tai_chinh",
     
-    -- Second Driver Info
+    -- Main Driver Salary (Route Cost usually goes to Main Driver if not split?? 
+    -- Assuming route_cost is the base salary for the trip)
+    to_char(COALESCE(cost.route_cost, 0), 'FM999,999,999,990') AS "Luong_tai_chinh",
+
+    -- Main Driver Allowances
+    
+    -- ==========================================================
+    -- MAIN DRIVER ALLOWANCE DETAILED COLUMNS (From CTE)
+    -- ==========================================================
+    sa.allowance_name_1 AS "Tai_chinh_Ten_phu_cap_1",
+    to_char(COALESCE(sa.allowance_amount_1, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_1",
+    sa.allowance_name_2 AS "Tai_chinh_Ten_phu_cap_2",
+    to_char(COALESCE(sa.allowance_amount_2, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_2",
+    sa.allowance_name_3 AS "Tai_chinh_Ten_phu_cap_3",
+    to_char(COALESCE(sa.allowance_amount_3, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_3",
+    sa.allowance_name_4 AS "Tai_chinh_Ten_phu_cap_4",
+    to_char(COALESCE(sa.allowance_amount_4, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_4",
+    sa.allowance_name_5 AS "Tai_chinh_Ten_phu_cap_5",
+    to_char(COALESCE(sa.allowance_amount_5, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_5",
+    sa.allowance_name_6 AS "Tai_chinh_Ten_phu_cap_6",
+    to_char(COALESCE(sa.allowance_amount_6, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_6",
+    
+    -- Total Allowance Main Driver
+    to_char(COALESCE(cost.total_allowance_cost_first_driver, 0), 'FM999,999,999,990') AS "Tong_phu_cap_tai_chinh",
+
+    -- Total Income Main Driver
+    to_char((
+        COALESCE(cost.route_cost, 0) + 
+        COALESCE(cost.total_allowance_cost_first_driver, 0)
+    ), 'FM999,999,999,990') AS "Tong_thu_nhap_tai_chinh",
+
+    -- ==========================================================
+    -- ASSISTANT DRIVER INFO & SALARY
+    -- ==========================================================
     d2.name AS "Tai_phu",
     d2.phone AS "Sdt_tai_phu",
     d2.external_code AS "Msnv_tai_phu",
-    to_char(CASE 
-        WHEN d2.external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) 
-        ELSE 0 
-    END, 'FM999,999,999,990') AS "Luong_tai_phu",
     
+    -- Assistant Driver Salary (Equal to route_cost if present)
+    to_char(
+        CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END, 
+        'FM999,999,999,990'
+    ) AS "Luong_tai_phu",
+
+    -- ==========================================================
+    -- ASSISTANT DRIVER ALLOWANCE DETAILED COLUMNS (From CTE)
+    -- ==========================================================
+    sa.allowance_name_1 AS "Tai_phu_Ten_phu_cap_1",
+    to_char(COALESCE(sa.allowance_amount_1, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_1",
+    sa.allowance_name_2 AS "Tai_phu_Ten_phu_cap_2",
+    to_char(COALESCE(sa.allowance_amount_2, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_2",
+    sa.allowance_name_3 AS "Tai_phu_Ten_phu_cap_3",
+    to_char(COALESCE(sa.allowance_amount_3, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_3",
+    sa.allowance_name_4 AS "Tai_phu_Ten_phu_cap_4",
+    to_char(COALESCE(sa.allowance_amount_4, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_4",
+    sa.allowance_name_5 AS "Tai_phu_Ten_phu_cap_5",
+    to_char(COALESCE(sa.allowance_amount_5, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_5",
+    sa.allowance_name_6 AS "Tai_phu_Ten_phu_cap_6",
+    to_char(COALESCE(sa.allowance_amount_6, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_6",
+    
+    -- Total Allowance Assistant Driver
+    to_char(COALESCE(cost.total_allowance_cost_second_driver, 0), 'FM999,999,999,990') AS "Tong_phu_cap_tai_phu",
+
+    -- Total Income Assistant Driver
+    to_char((
+        CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END +
+        COALESCE(cost.total_allowance_cost_second_driver, 0)
+    ), 'FM999,999,999,990') AS "Tong_thu_nhap_tai_phu",
+
+
+
+    -- ==========================================================
+    -- TRIP STATUS & NOTES
+    -- ==========================================================
     s.note AS "Ghi_chu",
     CASE 
         WHEN s.end_time < (NOW() AT TIME ZONE 'UTC') THEN 'Hoan tat'
@@ -99,28 +181,24 @@ SELECT
         ELSE 'Chua bat dau'
     END AS "Trang_thai_chuyen",
     
-    -- Allowances (Specific ID=1)
-    CASE WHEN als.allowance_1_quantity > 0 THEN 'Luu dem' ELSE NULL END AS "Phu_cap_1",
-    als.allowance_1_quantity AS "Sl_phu_cap_1",
-    to_char(COALESCE(cost.allowance_pc1, 0), 'FM999,999,999,990') AS "Phu_cap_1_thanh_tien",
+    -- ==========================================================
+    -- OVERALL SUMMARIES (Route Level)
+    -- ==========================================================
+    
+    -- Total Allowances for the Trip (Both Drivers)
+    to_char((COALESCE(cost.total_allowance_cost_first_driver, 0) + COALESCE(cost.total_allowance_cost_second_driver, 0)), 'FM999,999,999,990') AS "Tong_phu_cap_ca_chuyen",
 
-    -- Allowances (Specific ID=2)
-    CASE WHEN als.allowance_2_quantity > 0 THEN 'Rai diem' ELSE NULL END AS "Phu_cap_2",
-    als.allowance_2_quantity AS "Sl_phu_cap_2",
-    to_char(COALESCE(cost.allowance_pc2, 0), 'FM999,999,999,990') AS "Phu_cap_2_thanh_tien",
-    
-    -- Summaries
-    to_char(COALESCE(als.loading_allowance_cost, 0), 'FM999,999,999,990') AS "Tong_phu_cap_boc_xep",
-    to_char(COALESCE(als.standby_allowance_cost, 0), 'FM999,999,999,990') AS "Tong_luong_so_cua",
-    to_char((COALESCE(cost.other_allowance, 0) - COALESCE(als.loading_allowance_cost, 0) - COALESCE(als.standby_allowance_cost, 0)), 'FM999,999,999,990') AS "Tong_phu_cap_con_lai",
-    to_char(COALESCE(cost.total_allowance_cost, 0), 'FM999,999,999,990') AS "Tong_phu_cap",
-    
-    to_char(COALESCE(cost.route_cost, 0), 'FM999,999,999,990') AS "Luong_tuyen",
+    -- Surcharge
+    to_char(COALESCE(cost.total_surcharge, 0), 'FM999,999,999,990') AS "Tong_phu_phi",
+
+    -- Total Salary Cost for the Trip (Route Cost (Main) + Route Cost (Assistant if any) + All Allowances + Surcharge)
     to_char((
-        COALESCE(cost.route_cost, 0) + -- Lương Tài 1
-        CASE WHEN d2.external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END + -- Lương Tài 2
-        COALESCE(cost.total_allowance_cost, 0) -- Tổng Phụ Cấp
-    ), 'FM999,999,999,990') AS "Tong_luong"
+        COALESCE(cost.route_cost, 0) + 
+        CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END +
+        COALESCE(cost.total_allowance_cost_first_driver, 0) + 
+        COALESCE(cost.total_allowance_cost_second_driver, 0) +
+        COALESCE(cost.total_surcharge, 0)
+    ), 'FM999,999,999,990') AS "Tong_chi_phi_chuyen"
 
 FROM public.erp_schedules s
 
@@ -142,18 +220,17 @@ LEFT JOIN public.erp_driver d2 ON s.second_driver_external_id = d2.external_id
 -- Join Costs
 LEFT JOIN public.erp_schedules_logistic_cost cost ON s.external_id = cost.schedules_external_id
 
--- Join Allowance Summary
-LEFT JOIN AllowanceSummary als ON s.external_id = als.schedules_external_id
-
 -- Join Logistic Company
 LEFT JOIN public.erp_company log_comp ON s.logistic_company_external_id = log_comp.external_id
+
+-- Join Allowances CTE
+LEFT JOIN ScheduleAllowances sa ON s.external_id = sa.schedules_external_id
 
 WHERE 
     s.is_cancel = false
     -- Add Date Range Filter if needed
-    AND s.start_time >= '2026-01-01'
     AND s.is_valid = true
     AND s.vehicle_external_id IS NOT NULL
-    AND als.allowance_1_quantity > 0
 
 ORDER BY s.start_time DESC;
+

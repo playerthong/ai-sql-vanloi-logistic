@@ -668,10 +668,16 @@ CREATE TABLE public.erp_schedules_logistic_cost (
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"version" timestamp NULL,
-	allowance_pc1 numeric(18, 4) DEFAULT 0 NULL, -- Phụ cấp 1
-	allowance_pc2 numeric(18, 4) DEFAULT 0 NULL, -- Phụ cấp 2
-	total_allowance_cost numeric(18, 4) DEFAULT 0 NULL, -- Tổng phụ cấp
-	other_allowance numeric(18, 4) DEFAULT 0 NULL, -- Phụ cấp khác
+	allowance_pc1_first_driver numeric(18, 4) DEFAULT 0 NULL,
+	allowance_pc2_first_driver numeric(18, 4) DEFAULT 0 NULL,
+	total_allowance_cost_first_driver numeric(18, 4) DEFAULT 0 NULL,
+	other_allowance_first_driver numeric(18, 4) DEFAULT 0 NULL,
+	total_driver int4 DEFAULT 0 NULL,
+	allowance_pc1_second_driver numeric(18, 4) DEFAULT 0 NULL,
+	allowance_pc2_second_driver numeric(18, 4) DEFAULT 0 NULL,
+	total_allowance_cost_second_driver numeric(18, 4) DEFAULT 0 NULL,
+	other_allowance_second_driver numeric(18, 4) DEFAULT 0 NULL,
+	total_surcharge numeric(18, 4) DEFAULT 0 NULL,
 	CONSTRAINT erp_schedules_logistic_cost_pkey PRIMARY KEY (id),
 	CONSTRAINT uq_schedules_logistic_cost UNIQUE (schedules_external_id)
 );

@@ -1,3 +1,78 @@
+-- public.erp_business_cost_config definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_business_cost_config;
+
+CREATE TABLE public.erp_business_cost_config (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(255) NOT NULL,
+	code varchar(50) NOT NULL,
+	"type" varchar(20) NOT NULL, -- FIXED: Chi phí cố định, VARIABLE: Chi phí biến đổi
+	account_number varchar(50) NULL,
+	description text NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	deleted timestamp NULL,
+	is_deleted bool DEFAULT false NOT NULL,
+	department_external_id uuid NULL,
+	create_uid uuid NULL,
+	CONSTRAINT erp_business_cost_config_code_key UNIQUE (code),
+	CONSTRAINT erp_business_cost_config_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_business_cost_config_external_id UNIQUE (external_id)
+);
+
+-- Column comments
+
+COMMENT ON COLUMN public.erp_business_cost_config."type" IS 'FIXED: Chi phí cố định, VARIABLE: Chi phí biến đổi';
+
+
+-- public.erp_business_cost_config_department definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_business_cost_config_department;
+
+CREATE TABLE public.erp_business_cost_config_department (
+	id serial4 NOT NULL,
+	config_external_id uuid NOT NULL,
+	department_external_id uuid NOT NULL,
+	CONSTRAINT erp_business_cost_config_depa_config_external_id_department_key UNIQUE (config_external_id, department_external_id),
+	CONSTRAINT erp_business_cost_config_department_pkey PRIMARY KEY (id)
+);
+
+
+-- public.erp_calculator definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_calculator;
+
+CREATE TABLE public.erp_calculator (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
+	project_external_id uuid NULL,
+	vehicle_model_group_external_id uuid NULL,
+	shift_name varchar(255) NULL,
+	"name" varchar(255) NULL,
+	active bool DEFAULT true NULL,
+	"type" varchar(100) NULL,
+	route_type varchar(100) NULL,
+	default_km_monthly numeric(18, 4) DEFAULT 0 NULL,
+	price_default_km_monthly numeric(18, 4) DEFAULT 0 NULL,
+	price_over_default_per_km numeric(18, 4) DEFAULT 0 NULL,
+	route_cost numeric(18, 4) DEFAULT 0 NULL,
+	price_over_time numeric(18, 4) DEFAULT 0 NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	is_deleted bool DEFAULT false NOT NULL,
+	code varchar(50) NOT NULL,
+	CONSTRAINT erp_calculator_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_project_vehicle_model_group_shift UNIQUE (project_external_id, vehicle_model_group_external_id, shift_name)
+);
+
+
 -- public.erp_company_customer_allowance definition
 
 -- Drop table
@@ -6,7 +81,7 @@
 
 CREATE TABLE public.erp_company_customer_allowance (
 	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
-	external_id uuid DEFAULT gen_random_uuid() NOT NULL, 
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
 	company_customer_revenue_external_id uuid NOT NULL,
 	"name" varchar NOT NULL,
 	description varchar NULL,
@@ -18,7 +93,7 @@ CREATE TABLE public.erp_company_customer_allowance (
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	is_deleted bool DEFAULT false NOT NULL,
-	template_allowance_id int4 NULL, 
+	template_allowance_id int4 NULL,
 	unit varchar NULL,
 	CONSTRAINT erp_company_customer_allowance_pkey PRIMARY KEY (id)
 );
@@ -63,7 +138,8 @@ CREATE TABLE public.erp_company_customer_route_price (
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	is_deleted bool DEFAULT false NOT NULL,
-	CONSTRAINT erp_company_customer_route_price_pkey PRIMARY KEY (id)
+	CONSTRAINT erp_company_customer_route_price_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_route_company_customer UNIQUE (route_external_id, company_customer_revenue_external_id)
 );
 
 
@@ -138,6 +214,28 @@ CREATE TABLE public.erp_company_route_logistic_cost (
 );
 
 
+-- public.erp_configuration definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_configuration;
+
+CREATE TABLE public.erp_configuration (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	sharemap_enable bool NOT NULL,
+	min_version_android varchar NOT NULL,
+	min_version_ios varchar NOT NULL,
+	link_android varchar NULL,
+	link_ios varchar NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	sharemap_api_key varchar(255) NULL,
+	sharemap_access_api_key text NULL,
+	link_web varchar(255) DEFAULT NULL::character varying NULL,
+	CONSTRAINT erp_configuration_pkey PRIMARY KEY (id)
+);
+
+
 -- public.erp_driver definition
 
 -- Drop table
@@ -157,7 +255,6 @@ CREATE TABLE public.erp_driver (
 	flag_3pl bool NULL,
 	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
 	company_external_id uuid NULL,
-	partner_external_id uuid NULL,
 	country_code varchar(5) DEFAULT '84'::character varying NULL,
 	user_external_id uuid NULL,
 	first_name varchar(50) NULL,
@@ -388,14 +485,21 @@ CREATE TABLE public.erp_new_driver_notification (
 CREATE TABLE public.erp_notification (
 	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
 	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
-	user_external_id uuid NOT NULL,
-	title varchar NOT NULL,
-	body varchar NOT NULL,
+	user_external_id uuid NULL,
+	title varchar NULL,
+	body varchar NULL,
 	image_url varchar NULL,
-	fcm_token text NOT NULL,
+	fcm_token text NULL,
 	"data" json NULL,
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	is_sent_provider bool DEFAULT false NOT NULL,
+	provider int4 DEFAULT 0 NOT NULL,
+	user_action varchar(50) NULL,
+	is_read bool DEFAULT false NULL,
+	provider_response json NULL,
+	object_type varchar(50) NULL,
+	object_id varchar(100) NULL,
 	CONSTRAINT erp_notification_pkey PRIMARY KEY (id)
 );
 
@@ -421,9 +525,29 @@ CREATE TABLE public.erp_projects (
 	deleted timestamp NULL,
 	is_deleted bool DEFAULT false NOT NULL,
 	code varchar NULL,
+	shift_name text NULL,
 	CONSTRAINT erp_projects_pkey PRIMARY KEY (id)
 );
 CREATE INDEX idx_erp_projects_code ON public.erp_projects USING btree (code);
+
+
+-- public.erp_register definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_register;
+
+CREATE TABLE public.erp_register (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	username varchar(255) NOT NULL,
+	"password" varchar(255) NOT NULL,
+	first_name varchar(255) NULL,
+	last_name varchar(255) NULL,
+	address varchar(255) NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	CONSTRAINT erp_register_pkey PRIMARY KEY (id)
+);
 
 
 -- public.erp_route definition
@@ -433,31 +557,6 @@ CREATE INDEX idx_erp_projects_code ON public.erp_projects USING btree (code);
 -- DROP TABLE public.erp_route;
 
 CREATE TABLE public.erp_route (
-	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
-	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
-	project_external_id uuid NOT NULL, -- external_id of erp_projects
-	"name" varchar NOT NULL,
-	"type" varchar NULL,
-	kilometer varchar NULL,
-	description varchar NULL,
-	active bool DEFAULT true NOT NULL,
-	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	deleted timestamp NULL,
-	is_deleted bool DEFAULT false NOT NULL,
-	code varchar NULL,
-	CONSTRAINT erp_route_pkey PRIMARY KEY (id)
-);
-CREATE INDEX idx_erp_route_code ON public.erp_route USING btree (code);
-
-
--- public.erp_route_0929_09122025 definition
-
--- Drop table
-
--- DROP TABLE public.erp_route_0929_09122025;
-
-CREATE TABLE public.erp_route_0929_09122025 (
 	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
 	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
 	project_external_id uuid NOT NULL,
@@ -471,9 +570,13 @@ CREATE TABLE public.erp_route_0929_09122025 (
 	deleted timestamp NULL,
 	is_deleted bool DEFAULT false NOT NULL,
 	code varchar NULL,
-	CONSTRAINT erp_route_pkey_1 PRIMARY KEY (id)
+	sharemap_code varchar NULL,
+	route_type varchar(50) DEFAULT 'normal'::character varying NULL,
+	shift_name varchar NULL,
+	is_return bool DEFAULT true NULL,
+	CONSTRAINT erp_route_pkey PRIMARY KEY (id)
 );
-CREATE INDEX idx_erp_route_code_1 ON public.erp_route_0929_09122025 USING btree (code);
+CREATE INDEX idx_erp_route_code ON public.erp_route USING btree (code);
 
 
 -- public.erp_route_customer_price definition
@@ -492,7 +595,29 @@ CREATE TABLE public.erp_route_customer_price (
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	is_deleted bool DEFAULT false NOT NULL,
+	calculator_external_id uuid NULL,
 	CONSTRAINT erp_route_customer_price_pkey PRIMARY KEY (id)
+);
+
+
+-- public.erp_route_drop_point definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_route_drop_point;
+
+CREATE TABLE public.erp_route_drop_point (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
+	route_external_id uuid NULL,
+	"name" varchar NOT NULL,
+	"index" int4 NOT NULL,
+	lat numeric(9, 6) NOT NULL,
+	lng numeric(9, 6) NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	address varchar(255) NULL,
+	CONSTRAINT erp_route_drop_point_pkey PRIMARY KEY (id)
 );
 
 
@@ -512,8 +637,26 @@ CREATE TABLE public.erp_route_logistic_cost (
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	is_deleted bool DEFAULT false NOT NULL,
 	company_route_logistic_cost_external_id uuid NULL,
+	calculator_external_id uuid NULL,
 	CONSTRAINT erp_route_logistic_cost_pkey PRIMARY KEY (id),
 	CONSTRAINT uq_route_model_group_company_route_logistic_cost UNIQUE (route_external_id, company_route_logistic_cost_external_id, model_group_external_id)
+);
+
+
+-- public.erp_route_segment definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_route_segment;
+
+CREATE TABLE public.erp_route_segment (
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
+	from_external_id uuid NOT NULL,
+	to_external_id uuid NOT NULL,
+	distance_km_from_previous_point numeric(8, 3) NULL,
+	code varchar NULL,
+	actual_driver_distance float8 NULL,
+	CONSTRAINT erp_route_segment_pkey PRIMARY KEY (external_id)
 );
 
 
@@ -544,7 +687,6 @@ CREATE TABLE public.erp_schedules (
 	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
 	first_driver_phone varchar(15) NULL,
 	second_driver_phone varchar(15) NULL,
-	partner_external_id uuid NULL,
 	start_time timestamp NULL,
 	end_time timestamp NULL,
 	note text NULL,
@@ -554,22 +696,24 @@ CREATE TABLE public.erp_schedules (
 	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
 	company_external_id uuid NULL,
 	vehicle_external_id uuid NULL,
-	first_driver_external_id uuid NULL, -- external_id of erp_driver
-	second_driver_external_id uuid NULL, -- external_id of erp_driver
+	first_driver_external_id uuid NULL,
+	second_driver_external_id uuid NULL,
 	is_valid bool DEFAULT true NULL,
-	create_uid uuid NULL, -- user created reference to erp_user.external_id
-	write_uid uuid NULL, -- user updated reference to erp_user.external_id
+	create_uid uuid NULL,
+	write_uid uuid NULL,
 	first_driver_info varchar NULL,
 	second_driver_info varchar NULL,
 	code varchar NULL,
 	project_external_id uuid NULL,
-	route_external_id uuid NULL, -- external_id of erp_route
+	route_external_id uuid NULL,
 	first_driver_name varchar NULL,
 	second_driver_name varchar NULL,
 	license_plate varchar NULL,
 	is_cancel bool DEFAULT false NOT NULL,
-	logistic_company_external_id uuid NULL, -- external_id of erp_logistic_company
+	logistic_company_external_id uuid NULL,
 	model_group_external_id uuid NULL,
+	total_distance_km numeric(14, 2) DEFAULT 0.00 NULL,
+	external_code varchar NULL,
 	CONSTRAINT erp_schedules_pkey PRIMARY KEY (id),
 	CONSTRAINT uq_code UNIQUE (code),
 	CONSTRAINT uq_schedule_group_start_time UNIQUE (logistic_company_external_id, route_external_id, license_plate, start_time)
@@ -577,8 +721,6 @@ CREATE TABLE public.erp_schedules (
 CREATE INDEX idx_erp_schedules_code ON public.erp_schedules USING btree (code);
 CREATE INDEX idx_erp_schedules_start_end ON public.erp_schedules USING btree (start_time, end_time);
 CREATE INDEX idx_schedules_vehicle_external ON public.erp_schedules USING btree (vehicle_external_id);
-
-
 
 
 -- public.erp_schedules_customer_allowance definition
@@ -622,12 +764,35 @@ CREATE TABLE public.erp_schedules_customer_price (
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	"version" timestamp NULL,
+	allowance_pc1 numeric(18, 4) DEFAULT 0 NULL,
+	allowance_pc2 numeric(18, 4) DEFAULT 0 NULL,
+	total_allowance_cost numeric(18, 4) DEFAULT 0 NULL,
+	other_allowance numeric(18, 4) DEFAULT 0 NULL,
+	total_surcharge numeric(18, 4) DEFAULT 0 NULL,
 	CONSTRAINT erp_schedules_customer_price_pkey PRIMARY KEY (id),
 	CONSTRAINT uq_schedules_customer_price UNIQUE (schedules_external_id)
 );
 
 
--- public.erp_schedules_logistic_allowance definition allowance/phụ cấp
+-- public.erp_schedules_customer_surcharge definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_schedules_customer_surcharge;
+
+CREATE TABLE public.erp_schedules_customer_surcharge (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid NOT NULL,
+	schedules_customer_price_external_id uuid NOT NULL,
+	template_surcharge_id int4 NOT NULL,
+	surcharge numeric(18, 4) DEFAULT 0 NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	CONSTRAINT erp_schedules_customer_surcharge_pkey PRIMARY KEY (id)
+);
+
+
+-- public.erp_schedules_logistic_allowance definition
 
 -- Drop table
 
@@ -636,13 +801,15 @@ CREATE TABLE public.erp_schedules_customer_price (
 CREATE TABLE public.erp_schedules_logistic_allowance (
 	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
 	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
-	schedules_logistic_cost_external_id uuid NOT NULL, -- external_id of erp_schedules_logistic_cost
+	schedules_logistic_cost_external_id uuid NOT NULL,
 	company_logistic_allowance_external_id uuid NOT NULL,
 	quantity int4 DEFAULT 0 NULL,
 	allowance_cost numeric(18, 4) DEFAULT 0 NULL,
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	template_allowance_id int4 NULL, -- id of erp_template_allowance , if id =1 is Phụ cấp 1
+	template_allowance_id int4 NULL,
+	first_driver_external_id uuid NULL,
+	second_driver_external_id uuid NULL,
 	CONSTRAINT erp_schedules_logistic_allowance_pkey PRIMARY KEY (id),
 	CONSTRAINT uq_schedules_logistic_cost_company_logistic_allowance UNIQUE (schedules_logistic_cost_external_id, company_logistic_allowance_external_id)
 );
@@ -682,6 +849,85 @@ CREATE TABLE public.erp_schedules_logistic_cost (
 	CONSTRAINT uq_schedules_logistic_cost UNIQUE (schedules_external_id)
 );
 
+
+-- public.erp_schedules_logistic_surcharge definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_schedules_logistic_surcharge;
+
+CREATE TABLE public.erp_schedules_logistic_surcharge (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid NOT NULL,
+	schedules_logistic_cost_external_id uuid NOT NULL,
+	template_surcharge_id int4 NOT NULL,
+	surcharge numeric(18, 4) DEFAULT 0 NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	CONSTRAINT erp_schedules_logistic_surcharge_pkey PRIMARY KEY (id)
+);
+
+
+-- public.erp_shedlock definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_shedlock;
+
+CREATE TABLE public.erp_shedlock (
+	"name" varchar(64) NOT NULL,
+	lock_until timestamp NOT NULL,
+	locked_at timestamp NOT NULL,
+	locked_by varchar(255) NOT NULL,
+	CONSTRAINT erp_shedlock_pkey PRIMARY KEY (name)
+);
+
+
+-- public.erp_shifts definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_shifts;
+
+CREATE TABLE public.erp_shifts (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar NULL,
+	description text NULL,
+	start_time timestamp NULL,
+	end_time timestamp NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	deleted timestamp NULL,
+	is_deleted bool DEFAULT false NOT NULL,
+	CONSTRAINT erp_shifts_pkey PRIMARY KEY (id)
+);
+CREATE INDEX idx_erp_shifts_name_fts ON public.erp_shifts USING gin (to_tsvector('simple'::regconfig, (name)::text));
+
+
+-- public.erp_template_allowance definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_template_allowance;
+
+CREATE TABLE public.erp_template_allowance (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	"name" varchar NOT NULL,
+	description varchar NULL,
+	is_3pl bool DEFAULT false NOT NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	is_multiple bool DEFAULT false NULL,
+	unit varchar NULL,
+	is_deleted bool DEFAULT false NULL,
+	"type" int2 DEFAULT 0 NULL,
+	is_special bool DEFAULT false NULL,
+	CONSTRAINT erp_template_allowance_pkey PRIMARY KEY (id),
+	CONSTRAINT uq_name UNIQUE (name)
+);
+
+
 -- public.erp_template_surcharge definition
 
 -- Drop table
@@ -703,76 +949,20 @@ CREATE TABLE public.erp_template_surcharge (
 );
 
 
--- public.erp_schedules_logistic_surcharge definition
+-- public.erp_upload_aws definition
 
 -- Drop table
 
--- DROP TABLE public.erp_schedules_logistic_surcharge;
+-- DROP TABLE public.erp_upload_aws;
 
-CREATE TABLE public.erp_schedules_logistic_surcharge (
+CREATE TABLE public.erp_upload_aws (
 	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
-	external_id uuid NOT NULL,
-	schedules_logistic_cost_external_id uuid NOT NULL,
-	template_surcharge_id int4 NOT NULL,
-	surcharge numeric(18, 4) DEFAULT 0 NULL,
-	created timestamp DEFAULT CURRENT_TIMESTAMP NULL,
-	updated timestamp DEFAULT CURRENT_TIMESTAMP NULL,
-	CONSTRAINT erp_schedules_logistic_surcharge_pkey PRIMARY KEY (id)
-);
-
--- public.erp_schedules_customer_surcharge definition
-
--- Drop table
-
--- DROP TABLE public.erp_schedules_customer_surcharge;
-
-CREATE TABLE public.erp_schedules_customer_surcharge (
-	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
-	external_id uuid NOT NULL,
-	schedules_customer_price_external_id uuid NOT NULL,
-	template_surcharge_id int4 NOT NULL,
-	surcharge numeric(18, 4) DEFAULT 0 NULL,
-	created timestamp DEFAULT CURRENT_TIMESTAMP NULL,
-	updated timestamp DEFAULT CURRENT_TIMESTAMP NULL,
-	CONSTRAINT erp_schedules_customer_surcharge_pkey PRIMARY KEY (id)
-);
-
--- public.erp_shedlock definition
-
--- Drop table
-
--- DROP TABLE public.erp_shedlock;
-
-CREATE TABLE public.erp_shedlock (
-	"name" varchar(64) NOT NULL,
-	lock_until timestamp NOT NULL,
-	locked_at timestamp NOT NULL,
-	locked_by varchar(255) NOT NULL,
-	CONSTRAINT erp_shedlock_pkey PRIMARY KEY (name)
-);
-
-
--- public.erp_template_allowance definition
-
--- Drop table
-
--- DROP TABLE public.erp_template_allowance;
-
-CREATE TABLE public.erp_template_allowance (
-	-- id = 1 là Phụ cấp 1 (Lưu đêm) id=2 là Phụ cấp 2 (Rải điểm) . id =4,3,12,13,14 là Phụ cấp bốc xếp được tính cho phần chi phí 
-	-- id = 9 là Lương sơ cua  (2T - 5T) , id =10 là Lương sơ cua (6.5T - 8T)
-	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL, 
-	"name" varchar NOT NULL,
-	description varchar NULL,
-	is_3pl bool DEFAULT false NOT NULL,
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
+	url text NOT NULL,
+	create_uid uuid NOT NULL,
 	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
 	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	is_multiple bool NULL,
-	unit varchar NULL,
-	is_deleted bool DEFAULT false NULL,
-	"type" int2 DEFAULT 0 NULL,
-	CONSTRAINT erp_template_allowance_pkey PRIMARY KEY (id),
-	CONSTRAINT uq_name UNIQUE (name)
+	CONSTRAINT erp_upload_aws_pkey PRIMARY KEY (id)
 );
 
 
@@ -801,7 +991,7 @@ CREATE TABLE public.erp_user_working_routes (
 	end_time timestamp NULL,
 	note text NULL,
 	CONSTRAINT erp_user_working_routes_pkey PRIMARY KEY (id),
-	CONSTRAINT uq_user_route_unique UNIQUE (route_external_id, user_external_id)
+	CONSTRAINT uq_user_route_company_logistic UNIQUE (route_external_id, user_external_id, logistic_company_external_id)
 );
 
 
@@ -821,7 +1011,7 @@ CREATE TABLE public.erp_vehicle (
 	cabin varchar NULL,
 	vin_sn varchar NULL,
 	color varchar NULL,
-	truck_type varchar NULL, -- INTERNAL / 3PL
+	truck_type varchar NULL,
 	description text NULL,
 	create_date timestamp NULL,
 	write_date timestamp NULL,
@@ -981,6 +1171,35 @@ CREATE TABLE public.erp_vehicle_model_group (
 	is_deleted bool DEFAULT false NOT NULL,
 	weight int4 NULL,
 	CONSTRAINT erp_vehicle_model_group_pkey PRIMARY KEY (id)
+);
+
+
+-- public.erp_business_cost definition
+
+-- Drop table
+
+-- DROP TABLE public.erp_business_cost;
+
+CREATE TABLE public.erp_business_cost (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	external_id uuid DEFAULT gen_random_uuid() NOT NULL,
+	config_external_id uuid NULL,
+	cost_without_vat numeric(18, 2) DEFAULT 0 NOT NULL,
+	fee_vat numeric(5, 4) DEFAULT 0 NULL,
+	total_cost numeric(18, 2) DEFAULT 0 NULL,
+	apply_year int4 NULL,
+	from_date timestamp NULL,
+	to_date timestamp NULL,
+	create_uid uuid NULL,
+	description text NULL,
+	documents jsonb NULL,
+	is_deleted bool DEFAULT false NOT NULL,
+	deleted timestamp NULL,
+	created timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	updated timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	cost_type varchar(50) NULL,
+	CONSTRAINT erp_business_cost_pkey PRIMARY KEY (id),
+	CONSTRAINT fk_business_cost_config FOREIGN KEY (config_external_id) REFERENCES public.erp_business_cost_config(external_id) ON DELETE SET NULL
 );
 
 
@@ -1192,13 +1411,13 @@ CREATE TABLE public.erp_employee (
 	private_country_id int4 NULL,
 	avatar varchar(1024) NULL,
 	department_external_id uuid NULL,
-	user_external_id uuid NULL, -- user reference to erp_user.external_id
+	user_external_id uuid NULL,
 	company_external_id uuid NULL,
-	create_uid uuid NULL, -- user reference to erp_user.external_id
-	write_uid uuid NULL, -- user reference to erp_user.external_id
+	create_uid uuid NULL,
+	write_uid uuid NULL,
 	first_name varchar(50) NULL,
 	last_name varchar(50) NULL,
-	region varchar(100) NULL, --southern (Miền Bắc), northern (Miền Bắc)
+	region varchar(100) NULL,
 	CONSTRAINT erp_employee_pkey PRIMARY KEY (id)
 );
 
@@ -1232,6 +1451,8 @@ CREATE TABLE public.erp_users (
 -- public.erp_company foreign keys
 
 ALTER TABLE public.erp_company ADD CONSTRAINT erp_company_country_id_fkey FOREIGN KEY (country_id) REFERENCES public.erp_country(id) ON DELETE RESTRICT;
+ALTER TABLE public.erp_company ADD CONSTRAINT erp_partner_state_id_fkey FOREIGN KEY (state_id) REFERENCES public.erp_country_state(id) ON DELETE RESTRICT;
+
 
 -- public.erp_country foreign keys
 

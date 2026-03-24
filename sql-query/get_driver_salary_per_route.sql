@@ -142,7 +142,7 @@ SELECT
     
     -- Main Driver Salary (Route Cost usually goes to Main Driver if not split?? 
     -- Assuming route_cost is the base salary for the trip)
-    to_char(COALESCE(cost.route_cost, 0), 'FM999,999,999,990') AS "Luong_tai_chinh",
+    COALESCE(cost.route_cost, 0) AS "Luong_tai_chinh",
 
     -- Main Driver Allowances
     
@@ -150,34 +150,34 @@ SELECT
     -- MAIN DRIVER ALLOWANCE DETAILED COLUMNS (From CTE)
     -- ==========================================================
     sa.allowance_name_1 AS "Tai_chinh_Ten_phu_cap_1",
-    to_char(COALESCE(sa.allowance_amount_1, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_1",
+    COALESCE(sa.allowance_amount_1, 0) AS "Tai_chinh_So_tien_phu_cap_1",
     sa.allowance_name_2 AS "Tai_chinh_Ten_phu_cap_2",
-    to_char(COALESCE(sa.allowance_amount_2, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_2",
+    COALESCE(sa.allowance_amount_2, 0) AS "Tai_chinh_So_tien_phu_cap_2",
     sa.allowance_name_3 AS "Tai_chinh_Ten_phu_cap_3",
-    to_char(COALESCE(sa.allowance_amount_3, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_3",
+    COALESCE(sa.allowance_amount_3, 0) AS "Tai_chinh_So_tien_phu_cap_3",
     sa.allowance_name_4 AS "Tai_chinh_Ten_phu_cap_4",
-    to_char(COALESCE(sa.allowance_amount_4, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_4",
+    COALESCE(sa.allowance_amount_4, 0) AS "Tai_chinh_So_tien_phu_cap_4",
     sa.allowance_name_5 AS "Tai_chinh_Ten_phu_cap_5",
-    to_char(COALESCE(sa.allowance_amount_5, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_5",
+    COALESCE(sa.allowance_amount_5, 0) AS "Tai_chinh_So_tien_phu_cap_5",
     sa.allowance_name_6 AS "Tai_chinh_Ten_phu_cap_6",
-    to_char(COALESCE(sa.allowance_amount_6, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_6",
+    COALESCE(sa.allowance_amount_6, 0) AS "Tai_chinh_So_tien_phu_cap_6",
     sa.allowance_name_7 AS "Tai_chinh_Ten_phu_cap_7",
-    to_char(COALESCE(sa.allowance_amount_7, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_7",
+    COALESCE(sa.allowance_amount_7, 0) AS "Tai_chinh_So_tien_phu_cap_7",
     sa.allowance_name_8 AS "Tai_chinh_Ten_phu_cap_8",
-    to_char(COALESCE(sa.allowance_amount_8, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_8",
+    COALESCE(sa.allowance_amount_8, 0) AS "Tai_chinh_So_tien_phu_cap_8",
     sa.allowance_name_9 AS "Tai_chinh_Ten_phu_cap_9",
-    to_char(COALESCE(sa.allowance_amount_9, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_9",
+    COALESCE(sa.allowance_amount_9, 0) AS "Tai_chinh_So_tien_phu_cap_9",
     sa.allowance_name_10 AS "Tai_chinh_Ten_phu_cap_10",
-    to_char(COALESCE(sa.allowance_amount_10, 0), 'FM999,999,999,990') AS "Tai_chinh_So_tien_phu_cap_10",
+    COALESCE(sa.allowance_amount_10, 0) AS "Tai_chinh_So_tien_phu_cap_10",
     
     -- Total Allowance Main Driver
-    to_char(COALESCE(cost.total_allowance_cost_first_driver, 0), 'FM999,999,999,990') AS "Tong_phu_cap_tai_chinh",
+    COALESCE(cost.total_allowance_cost_first_driver, 0) AS "Tong_phu_cap_tai_chinh",
 
     -- Total Income Main Driver
-    to_char((
+    (
         COALESCE(cost.route_cost, 0) + 
         COALESCE(cost.total_allowance_cost_first_driver, 0)
-    ), 'FM999,999,999,990') AS "Tong_thu_nhap_tai_chinh",
+    ) AS "Tong_thu_nhap_tai_chinh",
 
     -- ==========================================================
     -- ASSISTANT DRIVER INFO & SALARY
@@ -187,57 +187,54 @@ SELECT
     d2.external_code AS "Msnv_tai_phu",
     
     -- Assistant Driver Salary (Equal to route_cost if present)
-    to_char(
-        CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END, 
-        'FM999,999,999,990'
-    ) AS "Luong_tai_phu",
+    CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END AS "Luong_tai_phu",
 
     -- ==========================================================
     -- ASSISTANT DRIVER ALLOWANCE DETAILED COLUMNS (From CTE)
     -- ==========================================================
     sa.allowance_name_1 AS "Tai_phu_Ten_phu_cap_1",
-    to_char(COALESCE(sa.allowance_amount_1, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_1",
+    COALESCE(sa.allowance_amount_1, 0) AS "Tai_phu_So_tien_phu_cap_1",
     sa.allowance_name_2 AS "Tai_phu_Ten_phu_cap_2",
-    to_char(COALESCE(sa.allowance_amount_2, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_2",
+    COALESCE(sa.allowance_amount_2, 0) AS "Tai_phu_So_tien_phu_cap_2",
     sa.allowance_name_3 AS "Tai_phu_Ten_phu_cap_3",
-    to_char(COALESCE(sa.allowance_amount_3, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_3",
+    COALESCE(sa.allowance_amount_3, 0) AS "Tai_phu_So_tien_phu_cap_3",
     sa.allowance_name_4 AS "Tai_phu_Ten_phu_cap_4",
-    to_char(COALESCE(sa.allowance_amount_4, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_4",
+    COALESCE(sa.allowance_amount_4, 0) AS "Tai_phu_So_tien_phu_cap_4",
     sa.allowance_name_5 AS "Tai_phu_Ten_phu_cap_5",
-    to_char(COALESCE(sa.allowance_amount_5, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_5",
+    COALESCE(sa.allowance_amount_5, 0) AS "Tai_phu_So_tien_phu_cap_5",
     sa.allowance_name_6 AS "Tai_phu_Ten_phu_cap_6",
-    to_char(COALESCE(sa.allowance_amount_6, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_6",
+    COALESCE(sa.allowance_amount_6, 0) AS "Tai_phu_So_tien_phu_cap_6",
     sa.allowance_name_7 AS "Tai_phu_Ten_phu_cap_7",
-    to_char(COALESCE(sa.allowance_amount_7, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_7",
+    COALESCE(sa.allowance_amount_7, 0) AS "Tai_phu_So_tien_phu_cap_7",
     sa.allowance_name_8 AS "Tai_phu_Ten_phu_cap_8",
-    to_char(COALESCE(sa.allowance_amount_8, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_8",
+    COALESCE(sa.allowance_amount_8, 0) AS "Tai_phu_So_tien_phu_cap_8",
     sa.allowance_name_9 AS "Tai_phu_Ten_phu_cap_9",
-    to_char(COALESCE(sa.allowance_amount_9, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_9",
+    COALESCE(sa.allowance_amount_9, 0) AS "Tai_phu_So_tien_phu_cap_9",
     sa.allowance_name_10 AS "Tai_phu_Ten_phu_cap_10",
-    to_char(COALESCE(sa.allowance_amount_10, 0), 'FM999,999,999,990') AS "Tai_phu_So_tien_phu_cap_10",
+    COALESCE(sa.allowance_amount_10, 0) AS "Tai_phu_So_tien_phu_cap_10",
     
     -- Total Allowance Assistant Driver
-    to_char(COALESCE(cost.total_allowance_cost_second_driver, 0), 'FM999,999,999,990') AS "Tong_phu_cap_tai_phu",
+    COALESCE(cost.total_allowance_cost_second_driver, 0) AS "Tong_phu_cap_tai_phu",
 
     -- Total Income Assistant Driver
-    to_char((
+    (
         CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END +
         COALESCE(cost.total_allowance_cost_second_driver, 0)
-    ), 'FM999,999,999,990') AS "Tong_thu_nhap_tai_phu",
+    ) AS "Tong_thu_nhap_tai_phu",
     
     -- ==========================================================
     -- PLAN SURCHARGES (From CTE)
     -- ==========================================================
     ss.surcharge_name_1 AS "Ten_phu_phi_1",
-    to_char(COALESCE(ss.surcharge_amount_1, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_1",
+    COALESCE(ss.surcharge_amount_1, 0) AS "So_tien_phu_phi_1",
     ss.surcharge_name_2 AS "Ten_phu_phi_2",
-    to_char(COALESCE(ss.surcharge_amount_2, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_2",
+    COALESCE(ss.surcharge_amount_2, 0) AS "So_tien_phu_phi_2",
     ss.surcharge_name_3 AS "Ten_phu_phi_3",
-    to_char(COALESCE(ss.surcharge_amount_3, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_3",
+    COALESCE(ss.surcharge_amount_3, 0) AS "So_tien_phu_phi_3",
     ss.surcharge_name_4 AS "Ten_phu_phi_4",
-    to_char(COALESCE(ss.surcharge_amount_4, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_4",
+    COALESCE(ss.surcharge_amount_4, 0) AS "So_tien_phu_phi_4",
     ss.surcharge_name_5 AS "Ten_phu_phi_5",
-    to_char(COALESCE(ss.surcharge_amount_5, 0), 'FM999,999,999,990') AS "So_tien_phu_phi_5",
+    COALESCE(ss.surcharge_amount_5, 0) AS "So_tien_phu_phi_5",
 
     -- ==========================================================
     -- TRIP STATUS & NOTES
@@ -254,19 +251,19 @@ SELECT
     -- ==========================================================
     
     -- Total Allowances for the Trip (Both Drivers)
-    to_char((COALESCE(cost.total_allowance_cost_first_driver, 0) + COALESCE(cost.total_allowance_cost_second_driver, 0)), 'FM999,999,999,990') AS "Tong_phu_cap_ca_chuyen",
+    (COALESCE(cost.total_allowance_cost_first_driver, 0) + COALESCE(cost.total_allowance_cost_second_driver, 0)) AS "Tong_phu_cap_ca_chuyen",
 
     -- Surcharge
-    to_char(COALESCE(cost.total_surcharge, 0), 'FM999,999,999,990') AS "Tong_phu_phi",
+    COALESCE(cost.total_surcharge, 0) AS "Tong_phu_phi",
 
     -- Total Salary Cost for the Trip (Route Cost (Main) + Route Cost (Assistant if any) + All Allowances + Surcharge)
-    to_char((
+    (
         COALESCE(cost.route_cost, 0) + 
         CASE WHEN s.second_driver_external_id IS NOT NULL THEN COALESCE(cost.route_cost, 0) ELSE 0 END +
         COALESCE(cost.total_allowance_cost_first_driver, 0) + 
         COALESCE(cost.total_allowance_cost_second_driver, 0) +
         COALESCE(cost.total_surcharge, 0)
-    ), 'FM999,999,999,990') AS "Tong_chi_phi_chuyen"
+    ) AS "Tong_chi_phi_chuyen"
 
 FROM public.erp_schedules s
 
